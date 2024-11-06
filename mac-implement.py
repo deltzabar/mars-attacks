@@ -1,10 +1,3 @@
-##TODO##
-# implement TMAC as a test
-# find concrete meaning for OMAC
-# if i can, implement OMAC
-# else, read the stuff about PMAC and jump there
-# try to think about the abstract attacks that would be possible if neither works
-
 import os
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
@@ -31,26 +24,33 @@ def peel(m, n):
     
 def omacKeyGen(k1):
     # encrypt n 0s using k1
-    k0 = blockEncrypt(k1, b"0000000000000000000000000000000000000000000000000000000000000000") #this is using n = 64
+    k0 = blockEncrypt(k1, b'\0' * 16) #this is using n =128 thus 16 bytes
     k2 = u(k0)
     k3 = u(k2) #thus k3 = Lu2
     return k1, k2, k3 
 
 def u(L):
     # if most significant b = 0, then simply perform <<1
-    C = 0x000000000000001b
-    hexL = L.hex()
-    binL = bin(int(hexL, base=16)).removeprefix('0b')
-    print(binL)
+    C = 0x00000000000000000000000000000087  #this is the constant for n=128
+    hexL = L.hex() #converts to hex, for visibility & to then move to binary
+    print("hexL: "+hexL)
+    binL = bin(int(hexL, base=16)).removeprefix('0b') #converts to binary to allow bitwise comparison
+    intL = int.from_bytes(L, byteorder='big') #convert to int for bitwise operations
+    print("binL: "+binL)
     if binL[1] == 0:
-        intL = int.from_bytes(L, byteorder='big')
+        print("starts with 0")
         shiftL = intL << 1
-        return shiftL.to_bytes(2, byteorder='big')
+        byteL = shiftL.to_bytes(17, byteorder='big')
+        print("post shift: "+str(shiftL)+" and as hex: " + byteL.hex())
+        return byteL #WHY won't it accept 16??? i don't understand
+     # else, perform <<1
     else:
-        intL = int.from_bytes(L, byteorder='big')
+        print("starts with 1")
         shiftL = (intL << 1) ^ C
-        return shiftL.to_bytes(2, byteorder='big')
-    # else, perform <<1
+        byteL = shiftL.to_bytes(17, byteorder='big')
+        print("post shift: "+str(shiftL)+" and as hex: " + byteL.hex())
+        return byteL 
+   
     # then xor with constant
     
 
@@ -59,13 +59,13 @@ def u(L):
 def main():
     setup()
     key = os.urandom(32)
+    print("key: "+key.hex())
     #ctxt = blockEncrypt(key, b"1111111111111111")
     #print(ctxt)
     #output = blockDecrypt(key, ctxt)
     #print(output)
     message = "12345678901234567890"
     first, second = peel(message, 16)
-    print(first + " " + second)
     toEnc = str.encode(first)
     #print(blockDecrypt(key, blockEncrypt(key, toEnc)))
     omacKeyGen(key)
