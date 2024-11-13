@@ -98,7 +98,16 @@ def OMACverif():
     print("placeholder!")
 
 def OMACattack1():
-    print("placeholder!")
+    keyString = "1234567890123456"
+    key = str.encode(keyString)
+    print("Key is: "+ key.hex())
+    k1, k2, k3 = omacKeyGen(key)
+    k2String = "CALCULATE THIS" ##TODO: Fix this##
+    finalMAC = OMAC(k1, k2, k3, k2String)
+    print("Output is: "+ finalMAC.hex())
+    calck2 = u(finalMAC)
+    ##TODO:Need to convert to BYTE/HEX
+    print("Thus, guessed k2 is: "+ calck2.hex())
 
 def main():
     setup()
