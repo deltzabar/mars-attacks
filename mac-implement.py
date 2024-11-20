@@ -75,7 +75,8 @@ def OMAC(k1: bytes, k2: int, k3: int, m: str):
 
 
 def lastblock(k1: bytes, k2: int, k3: int, m: str, prevBlock: bytes):
-    ##TODO:Check types match expected##
+    ##TODO:NEEDS FIXING FOR ONES W PADDING, BUT NOT NEEDED NOW##
+    ##IDEA: REDO BUT WITH M ASSUMED AS HEX ?!?!?!##
     byteM: bytes = str.encode(m)
     intM: int = int.from_bytes(byteM, byteorder='big')
     if prevBlock == []:
@@ -111,12 +112,21 @@ def OMACattack1():
     key = str.encode(keyString)
     print("Key is: "+ key.hex())
     k1, k2, k3 = omacKeyGen(key)
-    k2String = "CALCULATE THIS" ##TODO: Fix this##
-    finalMAC = OMAC(k1, k2, k3, k2String)
+    k2String = hex(k2)
+    finalMAC = OMAC(k1, k2, k3, k2String)  ##FORGOT THIS IS THE ISSUE !!!!!
     print("Output is: "+ finalMAC.hex())
     calck2 = u(finalMAC)
     ##TODO:Need to convert to BYTE/HEX
     print("Thus, guessed k2 is: "+ calck2.hex())
+
+def reverseKey(k2: str):
+    C = 0x00000000000000000000000000000087
+    bytesKey = str.encode(k2)
+    intKey = int.from_bytes(bytesKey, 'big')
+    intKey = (intKey ^ C) >> 1
+    return intKey
+    
+
 
 def test():
     key = "1234567890123456"
@@ -130,9 +140,9 @@ def test():
     print(bytesKey)
     print("from hex that's ")
     print(bytefromhex)
-    print("and from int that's ")
+    print("and from int that's ") ##this is the one that doesn't match
     print(bytefromint)
-    print("compare hex from int: "+hexfromint)
+    print("compare hex from int: "+hexfromint+" and from bytes: "+bytesKey.hex())
 
 def main():
     setup()
@@ -147,8 +157,9 @@ def main():
     #toEnc = str.encode(first)
     #print(blockDecrypt(key, blockEncrypt(key, toEnc)))
     k1, k2, k3 = omacKeyGen(key)
-    OMAC(k1, k2, k3, "1234567890123456")
-    #test()
+    #OMAC(k1, k2, k3, "1234567890123456")
+    test()
+    #OMACattack1()
 
 
 
