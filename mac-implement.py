@@ -25,12 +25,12 @@ def peel(m: str, n: int):
 def omacKeyGen(k1: bytes):
     # encrypt n 0s using k1
     k0: bytes = blockEncrypt(k1, b'\0' * 16) #this is using n =128 thus 16 bytes
-    print("k0 is ")
-    print(k0.hex())
+    #print("k0 is ")
+    #print(k0.hex())
     intk0: int = int.from_bytes(k0, byteorder='big')
-    print("whihc makes intk0: "+hex(intk0))
+    #print("whihc makes intk0: "+hex(intk0))
     k2: int = u(intk0)
-    print("then k2 is: "+hex(k2))
+    #print("then k2 is: "+hex(k2))
     k3: int = u(k2) #thus k3 = Lu2
     return k1, k2, k3 
 
@@ -87,15 +87,18 @@ def lastblock(k1: bytes, k2: int, k3: int, m: str, prevBlock: bytes): #reminder,
         if len(m) == 32:
             last: int = k2 ^ intM
             hexLast: str = hex(last)
-            print("hexLast = "+hexLast)
-            byteLast = bytes.fromhex(hexLast[2:])
-            return blockEncrypt(k1, byteLast)
+            #print("hexLast = "+hexLast)
+            byteLast = last.to_bytes(17, byteorder='big')
+            #print(byteLast)
+            return blockEncrypt(k1, byteLast[1:])
         else:
             ##apply padding
             last: int = k3 ^ intM
             hexLast: str = hex(last)
-            byteLast = bytes.fromhex(hexLast[2:])
-            return blockEncrypt(k1, last)
+            #byteLast = bytes.fromhex(hexLast[2:])
+            byteLast = last.to_bytes(17, byteorder='big')
+            #print(byteLast)
+            return blockEncrypt(k1, byteLast[1:])
     else:
         if len(m) == 32:
             last: int = intM ^ intPrevBlock ^ k2 #prevBlock sld be int
@@ -118,13 +121,13 @@ def OMACattack1():
     print("Key is: "+ key.hex())
     k1, k2, k3 = omacKeyGen(key)
     k2String = (hex(k2))[2:]
-    print("key string is "+k2String)
     finalMAC = OMAC(k1, k2, k3, k2String)
     print("Output is: "+ finalMAC.hex())
     hexMAC = finalMAC.hex()
-    calck2 = u(finalMAC)
+    intMAC = int.from_bytes(finalMAC, 'big')
+    calck2 = u(intMAC)
     ##TODO:Need to convert to BYTE/HEX
-    print("Thus, guessed k2 is: "+ calck2.hex())
+    print("Key string is: "+k2String+" compared to guessed k2: "+ hex(calck2))
 
 def reverseKey(k2: str):
     C = 0x00000000000000000000000000000087
@@ -154,7 +157,7 @@ def test():
 def main():
     setup()
     key = os.urandom(32)
-    print("key: "+key.hex())
+    #print("key: "+key.hex())
     #ctxt = blockEncrypt(key, b"1111111111111111")
     #print(ctxt)
     #output = blockDecrypt(key, ctxt)
