@@ -25,8 +25,12 @@ def peel(m: str, n: int):
 def omacKeyGen(k1: bytes):
     # encrypt n 0s using k1
     k0: bytes = blockEncrypt(k1, b'\0' * 16) #this is using n =128 thus 16 bytes
+    print("k0 is ")
+    print(k0.hex())
     intk0: int = int.from_bytes(k0, byteorder='big')
+    print("whihc makes intk0: "+hex(intk0))
     k2: int = u(intk0)
+    print("then k2 is: "+hex(k2))
     k3: int = u(k2) #thus k3 = Lu2
     return k1, k2, k3 
 
@@ -50,17 +54,17 @@ def u(L: int):
    
     # then xor with constant
 
-def OMAC(k1: bytes, k2: int, k3: int, m: str):
+def OMAC(k1: bytes, k2: int, k3: int, m: str): #string as hex representation
     ##TODO: Making assumption here that message is a STRING##
-    block, rest = peel(m, 16)
+    block, rest = peel(m, 32) #32, = 16 bytes
     #check if last block
     if rest != []:
         #create first Enc block
-        toEnc: bytes = str.encode(block)
+        toEnc: bytes = bytes.fromhex(block)
         prevBlock: bytes = blockEncrypt(k1, toEnc)
-        intPrevBlock: int = int.from_bytes(prevBlock, byteorder='big')
+        intPrevBlock: int = int.from_bytes(prevBlock, byteorder='big') 
         while rest != []: #loop while there are still more block to come
-            block, rest = peel(rest, 16)
+            block, rest = peel(rest, 32)
             if rest == []: #if nothing left, do lastblock procedures
                 return lastblock(k1, k2, k3, block, prevBlock)
             else:
@@ -74,15 +78,16 @@ def OMAC(k1: bytes, k2: int, k3: int, m: str):
         return lastblock(k1, k2, k3, block, [])
 
 
-def lastblock(k1: bytes, k2: int, k3: int, m: str, prevBlock: bytes):
+def lastblock(k1: bytes, k2: int, k3: int, m: str, prevBlock: bytes): #reminder, m = hex
     ##TODO:NEEDS FIXING FOR ONES W PADDING, BUT NOT NEEDED NOW##
-    ##IDEA: REDO BUT WITH M ASSUMED AS HEX ?!?!?!##
-    byteM: bytes = str.encode(m)
-    intM: int = int.from_bytes(byteM, byteorder='big')
+    #byteM: bytes = bytes.fromhex(m)
+    intM: int = int(m, 16)
+    intPrevBlock: int = int.from_bytes(prevBlock, byteorder='big') 
     if prevBlock == []:
-        if len(m) == 16:
+        if len(m) == 32:
             last: int = k2 ^ intM
             hexLast: str = hex(last)
+            print("hexLast = "+hexLast)
             byteLast = bytes.fromhex(hexLast[2:])
             return blockEncrypt(k1, byteLast)
         else:
@@ -92,14 +97,14 @@ def lastblock(k1: bytes, k2: int, k3: int, m: str, prevBlock: bytes):
             byteLast = bytes.fromhex(hexLast[2:])
             return blockEncrypt(k1, last)
     else:
-        if len(m) == 16:
-            last: int = intM ^ prevBlock ^ k2
+        if len(m) == 32:
+            last: int = intM ^ intPrevBlock ^ k2 #prevBlock sld be int
             hexLast: str = hex(last)
             byteLast = bytes.fromhex(hexLast[2:])
             return blockEncrypt(k1, last)
         else:
             ##run padding
-            last: int = intM ^ prevBlock ^ k3
+            last: int = intM ^ intPrevBlock ^ k3
             hexLast: str = hex(last)
             byteLast = bytes.fromhex(hexLast[2:])
             return blockEncrypt(k2, last)
@@ -112,9 +117,11 @@ def OMACattack1():
     key = str.encode(keyString)
     print("Key is: "+ key.hex())
     k1, k2, k3 = omacKeyGen(key)
-    k2String = hex(k2)
-    finalMAC = OMAC(k1, k2, k3, k2String)  ##FORGOT THIS IS THE ISSUE !!!!!
+    k2String = (hex(k2))[2:]
+    print("key string is "+k2String)
+    finalMAC = OMAC(k1, k2, k3, k2String)
     print("Output is: "+ finalMAC.hex())
+    hexMAC = finalMAC.hex()
     calck2 = u(finalMAC)
     ##TODO:Need to convert to BYTE/HEX
     print("Thus, guessed k2 is: "+ calck2.hex())
@@ -125,14 +132,13 @@ def reverseKey(k2: str):
     intKey = int.from_bytes(bytesKey, 'big')
     intKey = (intKey ^ C) >> 1
     return intKey
-    
-
 
 def test():
     key = "1234567890123456"
     bytesKey = str.encode(key)
     intKey = int.from_bytes(bytesKey, 'big')
     hexfromint = hex(intKey)
+    intfromhex = int(hexfromint, 16)
     bytefromhex = bytes.fromhex(hexfromint[2:])
     bytefromint = intKey.to_bytes(17, byteorder='big')
     print(key)
@@ -143,6 +149,7 @@ def test():
     print("and from int that's ") ##this is the one that doesn't match
     print(bytefromint)
     print("compare hex from int: "+hexfromint+" and from bytes: "+bytesKey.hex())
+    print("compare int from string: "+str(intKey)+" and int from hex: "+str(intfromhex))
 
 def main():
     setup()
@@ -158,12 +165,13 @@ def main():
     #print(blockDecrypt(key, blockEncrypt(key, toEnc)))
     k1, k2, k3 = omacKeyGen(key)
     #OMAC(k1, k2, k3, "1234567890123456")
-    test()
-    #OMACattack1()
+    #test()
+    OMACattack1()
 
 
 
 main()
 
-##k2 and k3 DONT HAVE TO BE BYTES !!! CAN STAY AS INTS/HEX !!!!
+##TODO: Causing issues bc if you get no. too small as int, won't convert to full-size hex##
+##switch to using bytes, work out how to cut off first/last byte##
 
