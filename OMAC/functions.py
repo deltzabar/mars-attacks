@@ -5,7 +5,7 @@ from cryptography.hazmat.primitives import padding
 
 def setup():
     global iv
-    iv = os.urandom(16)
+    iv = b'\0' * 16 #os.urandom(16)
 
 def blockEncrypt(k1: bytes, m: bytes):
     cipher = Cipher(algorithms.AES(k1), modes.CBC(iv))

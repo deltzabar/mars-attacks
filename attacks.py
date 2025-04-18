@@ -5,6 +5,7 @@ from OMAC.functions import omacSign, omacKeyGen, omacVerify, u, blockEncrypt
 
 
 def key_recovery():
+    print("\n[+] Starting key recovery...")
     keyString = "1234567890123456" #a set key string is just used for easy reproducability of results
     key = str.encode(keyString)
     k1, k2, k3 = omacKeyGen(key)
@@ -35,40 +36,59 @@ def KCSign(xi, key: list): #key should be basically an implicit variable to the 
 def xi1(key):
     m = "hellohowareyouuu"
     bytem = str.encode(m)
-    print(bytem)
     intm = int.from_bytes(bytem, 'big')
     k0 = blockEncrypt(key[0], b'\0' * 16) #this is using n =128 thus 16 bytes
     L = int.from_bytes(k0, byteorder='big')
-    return key, hex(intm ^ L)[2:]
+    return key, hex(intm)[2:] #should have xor with L
 
 
 def forgery_one():
+    print("\n[+] Starting forgery 1...")
     keyString = "1234567890123456"
     k1, k2, k3 = omacKeyGen(str.encode(keyString))
     key = [k1, k2, k3]
+    print("[+] Submitting xi 1 to oracle")
     tag1 = KCSign(xi1, key)
-    print("tag1 is")
-    print(tag1)
-    m = "hellohowareyouu"
+    print("[+] MAC returned from oracle request is : " + hex(int.from_bytes(tag1, 'big'))[2:])
+    m = "hellohowareyouuu"
     m2 = (b'\0' * 16) + str.encode(m)
-    print(m2)
     intm2 = int.from_bytes(m2, 'big')
     hexm2 = hex(intm2)
-    tag2 = omacSign(k1, k2, k3, hexm2)
-    print("tag2 is")
-    print(tag2)
-    if omacVerify(str.encode(keyString), hexm2, tag1):
+    print("[+] Submitting forgery to be verified")
+    if omacVerify(str.encode(keyString), hexm2[2:], tag1):
         print("Successful forgery")
-    print("ended")
-    
+
+def xi2(key):
+    m = "hellohowareyouuu"
+    bytem = str.encode(m)
+    intm = int.from_bytes(bytem, 'big')
+    delta = 58008
+    k2 = key[1] ^ delta
+    return [key[0], k2, key[2]], hex(intm)[2:]
+
 
 def forgery_two():
-    print("uh huh")
-
+    print("\n[+] Starting forgery 2...")
+    keyString = "1234567890123456"
+    k1, k2, k3 = omacKeyGen(str.encode(keyString))
+    key = [k1, k2, k3]
+    print("[+] Submitting xi 2 to oracle")
+    tag1 = KCSign(xi2, key)
+    print("[+] MAC returned from oracle request is : " + hex(int.from_bytes(tag1, 'big'))[2:])
+    m = "hellohowareyouuu"
+    delta = 58008
+    bytem = str.encode(m)
+    intm = int.from_bytes(bytem, 'big')
+    m2 = intm ^ delta
+    hexm2 = hex(m2)
+    print("[+] Submitting forgery to be verified")
+    if omacVerify(str.encode(keyString), hexm2[2:], tag1):
+        print("Successful forgery")
 
 def main():
     key_recovery()
     forgery_one()
+    forgery_two()
 
 main()
 
