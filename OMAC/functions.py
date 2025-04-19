@@ -1,19 +1,13 @@
-import os
 #import block cipher primitives to use in OMAC
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives import padding
-
-def setup():
-    global iv
-    iv = b'\0' * 16 #os.urandom(16)
 
 def blockEncrypt(k1: bytes, m: bytes):
-    cipher = Cipher(algorithms.AES(k1), modes.CBC(iv))
+    cipher = Cipher(algorithms.AES(k1), modes.ECB())
     encryptor = cipher.encryptor()
     return encryptor.update(m) + encryptor.finalize()
 
 def blockDecrypt(k1: bytes, c: bytes):
-    cipher = Cipher(algorithms.AES(k1), modes.CBC(iv))
+    cipher = Cipher(algorithms.AES(k1), modes.ECB())
     decryptor = cipher.decryptor()
     return decryptor.update(c) + decryptor.finalize()
 
@@ -121,8 +115,3 @@ def reverseKey(k2: str):
     intKey = int.from_bytes(bytesKey, 'big')
     intKey = (intKey ^ C) >> 1
     return intKey
-
-def main():
-    setup()
-
-main()

@@ -36,10 +36,11 @@ def KCSign(xi, key: list): #key should be basically an implicit variable to the 
 def xi1(key):
     m = "hellohowareyouuu"
     bytem = str.encode(m)
-    intm = int.from_bytes(bytem, 'big')
+    intm = int.from_bytes(bytem, byteorder='big')
     k0 = blockEncrypt(key[0], b'\0' * 16) #this is using n =128 thus 16 bytes
     L = int.from_bytes(k0, byteorder='big')
-    return key, hex(intm)[2:] #should have xor with L
+    print("m = "+hex(intm ^ L))
+    return key, hex(intm ^ L)[2:] #should have xor with L
 
 
 def forgery_one():
@@ -51,11 +52,9 @@ def forgery_one():
     tag1 = KCSign(xi1, key)
     print("[+] MAC returned from oracle request is : " + hex(int.from_bytes(tag1, 'big'))[2:])
     m = "hellohowareyouuu"
-    m2 = (b'\0' * 16) + str.encode(m)
-    intm2 = int.from_bytes(m2, 'big')
-    hexm2 = hex(intm2)
+    m2 = ('0'*32) + hex(int.from_bytes(str.encode(m), 'big'))[2:]
     print("[+] Submitting forgery to be verified")
-    if omacVerify(str.encode(keyString), hexm2[2:], tag1):
+    if omacVerify(str.encode(keyString), m2, tag1):
         print("Successful forgery")
 
 def xi2(key):
